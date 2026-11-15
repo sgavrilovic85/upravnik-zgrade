@@ -2,7 +2,7 @@
 <html lang="sr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Moja zgrada – Upravnik</title>
-<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#12337a"><link rel="apple-touch-icon" href="icon-512.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json"><script src="qrcode.js"></script><meta name="theme-color" content="#12337a"><link rel="apple-touch-icon" href="icon-512.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <style>
 :root{--bg:#f2f4f1;--card:#fff;--tx:#1d2a27;--mu:#5b6b66;--pr:#12337a;--prx:#fff;--bad:#b3261e;--ok:#17703f;--bd:#d5dcd8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101715;--card:#18221f;--tx:#eaf1ee;--mu:#9bada7;--pr:#7fa6ff;--prx:#06143a;--bad:#ff8a80;--ok:#5fd68e;--bd:#2a3833}}
@@ -25,7 +25,7 @@ h1{font-size:28px;margin:8px 0 12px}h2{font-size:21px;margin:24px 0 8px}
 label{display:block;margin:16px 0 6px;font-weight:600}
 input,select,textarea{width:100%;min-height:56px;padding:10px 12px;font:inherit;color:var(--tx);background:var(--card);border:2px solid var(--bd);border-radius:12px}
 textarea{min-height:140px;font-size:14px}
-.two{display:flex;gap:12px}.two>div:first-child{flex:0 0 36%}.two>div:last-child{flex:1}
+.two{display:flex;gap:12px}.two>div:first-child{flex:0 0 36%}.nl{width:100%;border-collapse:collapse}.nl td{border:1px solid var(--bd);padding:8px;vertical-align:top}.two>div:last-child{flex:1}
 .two3{display:flex;gap:8px;margin-top:10px}.v{flex:1;min-height:60px;font:inherit;font-weight:700;font-size:17px;border:2px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);cursor:pointer}.v.on{color:var(--bg);border-color:transparent}.v.za{background:var(--ok)}.v.protiv{background:var(--bad)}
 @media print{:root:root:root{--bg:#fff;--card:#fff;--tx:#000;--mu:#444;--bad:#b3261e;--ok:#17703f;--bd:#999}.b,.noprint{display:none!important}.pg{break-after:page}.pg:last-of-type{break-after:auto}#app{padding:0}}
 .b{text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center}
@@ -33,7 +33,7 @@ textarea{min-height:140px;font-size:14px}
 </style></head><body><main id="app"></main>
 <script>
 let D;try{D=JSON.parse(localStorage.getItem('uz'))}catch(e){}
-D=D||{zgrada:'',stanovi:[],zad:[],upl:[]};D.sast=D.sast||[];D.rac=D.rac||[];D.kvar=D.kvar||[];D.ziro=D.ziro||'';
+D=D||{zgrada:'',stanovi:[],zad:[],upl:[]};D.sast=D.sast||[];D.rac=D.rac||[];D.kvar=D.kvar||[];D.ziro=D.ziro||'';D.firme=D.firme||[];
 let V={p:'home'},armed='',IM=[];
 const save=()=>{try{localStorage.setItem('uz',JSON.stringify(D))}catch(e){}};
 const $=s=>document.querySelector(s),app=$('#app');
@@ -44,7 +44,7 @@ const num=v=>parseFloat(String(v).replace(/\./g,'').replace(',','.'))||0;
 const dec=v=>parseFloat(String(v).replace(',','.'))||0;
 const zi=(z,s)=>z.po=='m2'?z.cena*(s.kv||0):z.iznos;
 const dug=s=>(s.pd||0)+D.zad.filter(z=>z.st.includes(s.id)).reduce((a,z)=>a+zi(z,s),0)-D.upl.filter(u=>u.stan==s.id).reduce((a,u)=>a+u.iznos,0);
-const stTxt=d=>d>0.005?`<span class="bad">Duguje<br>${fmt(d)}</span>`:d<-0.005?`<span class="ok">Preplata<br>${fmt(-d)}</span>`:`<span class="ok">Uredno ✓</span>`;
+const stTxt=d=>d>0.005?`<span class="bad">Duguje<br>${fmt(d)}</span>`:d<-0.005?`<span class="ok">Pretplata<br>${fmt(-d)}</span>`:`<span class="ok">Uredno ✓</span>`;
 const sn=id=>{const s=D.stanovi.find(x=>x.id==id);return s?`Stan ${esc(s.broj)} — ${esc(s.ime)}`:'(obrisan stan)'};
 const go=(p,id)=>{V={p,id};armed='';render();scrollTo(0,0)};
 const back=p=>`<button class="b ghost" onclick="go('${p}')">← Nazad</button>`;
@@ -57,7 +57,8 @@ function del(k,id){const key=k+id;if(armed!=key){armed=key;render();return}
  if(k=='m')D.sast=D.sast.filter(x=>x.id!=id);
  if(k=='r')D.rac=D.rac.filter(x=>x.id!=id);
  if(k=='k')D.kvar=D.kvar.filter(x=>x.id!=id);
- save();go({s:'stanari',z:'zad',u:'upl',m:'sast',r:'rac',k:'kvar'}[k])}
+ if(k=='f')D.firme=D.firme.filter(x=>x.id!=id);
+ save();go({s:'stanari',z:'zad',u:'upl',m:'sast',r:'rac',k:'kvar',f:'firme'}[k])}
 function err(m){$('#e').textContent=m}
 
 function home(){const LOGO='<div style="background:#fff;border-radius:16px;padding:6px;margin:0 auto 12px;max-width:320px"><img src="logo.jpg" alt="Moja zgrada – Upravnik" style="display:block;width:100%;height:auto"></div>';const ds=D.stanovi.reduce((a,s)=>a+Math.max(0,dug(s)),0),zr=za(),ukr=zr.reduce((a,x)=>a+x.iznos,0),kz=zr.filter(kasni).length;
@@ -73,7 +74,7 @@ function home(){const LOGO='<div style="background:#fff;border-radius:16px;paddi
  <button class="b" onclick="go('izv')">📊 Izveštaji</button>
  <button class="b" onclick="go('uvoz')">📥 Uvoz izvoda iz banke</button>
  <button class="b ghost" onclick="go('bk')">💾 Rezervna kopija</button>
- <label for="zg">Naziv zgrade</label><input id="zg" value="${esc(D.zgrada)}" placeholder="npr. Ulica 22. septembar 46" onchange="D.zgrada=this.value.trim();save();render()"><label for="zr">Žiro račun stambene zajednice</label><input id="zr" value="${esc(D.ziro||'')}" placeholder="npr. 160-0000000000000-00" onchange="D.ziro=this.value.trim();save()">`}
+ <label for="zg">Naziv zgrade</label><input id="zg" value="${esc(D.zgrada)}" placeholder="npr. Ulica 22. septembar 46" onchange="D.zgrada=this.value.trim();save();render()"><label for="zr">Žiro račun stambene zajednice</label><input id="zr" value="${esc(D.ziro||'')}" placeholder="npr. 160-0000000000000-00" onchange="D.ziro=this.value.trim();save();render()"><label for="pr">Naziv primaoca uplate</label><input id="pr" value="${esc(D.primalac||'')}" placeholder="npr. Stambena zajednica Dunavska 17" onchange="D.primalac=this.value.trim();save()"><label for="sfk">Šifra plaćanja za QR kod</label><input id="sfk" inputmode="numeric" value="${esc(D.sf||'289')}" onchange="D.sf=this.value.trim();save()">`}
 
 function stanari(){app.innerHTML=back('home')+`<h1>Stanari</h1>`+
  (D.stanovi.map(s=>`<div class="card row" tabindex="0" onclick="go('stan','${s.id}')"><div><b>Stan ${esc(s.broj)}</b><div class="mu">${esc(s.ime)} — ${s.kv||0} m²</div></div><div>${stTxt(dug(s))}</div></div>`).join('')||'<p class="mu">Još nema stanova. Dodajte prvi.</p>')+
@@ -87,7 +88,7 @@ function stan(){const s=D.stanovi.find(x=>x.id==V.id);if(!s)return go('stanari')
  <button class="b" onclick="go('uplNew','${s.id}')">💰 Dodaj uplatu</button>
  <button class="b ghost" onclick="go('racun','${s.id}')">📄 Račun za stanara</button>
  ${s.pd?`<div class="card row"><div>Prethodni dug (preneto)</div><div>${fmt(s.pd)}</div></div>`:''}<h2>Zaduženja</h2>`+(zs.map(z=>`<div class="card row"><div>${esc(z.opis)}</div><div>${fmt(zi(z,s))}</div></div>`).join('')||'<p class="mu">Nema zaduženja.</p>')+
- `<h2>Uplate</h2>`+(us.map(u=>`<div class="card row"><div>${u.datum.split('-').reverse().join('.')}.</div><div class="ok">${fmt(u.iznos)}</div></div>`).join('')||'<p class="mu">Nema uplata.</p>')+`<label for="kv">Kvadratura (m²)</label><input id="kv" inputmode="decimal" value="${s.kv||''}" onchange="setKv('${s.id}',this.value)">`+`<label for="sf">Šifra u pozivu na broj</label><input id="sf" value="${esc(s.sif||'')}" placeholder="npr. PPJ8A/1" onchange="D.stanovi.find(x=>x.id=='${s.id}').sif=this.value.trim();save()"><label for="tl">Telefon stanara</label><input id="tl" type="tel" inputmode="tel" value="${esc(s.tel||'')}" placeholder="npr. 064 123 4567" onchange="D.stanovi.find(x=>x.id=='${s.id}').tel=this.value.trim();save()"><label for="pd">Prethodni dug (din)</label><input id="pd" inputmode="decimal" value="${s.pd?String(s.pd).replace('.',','):''}" placeholder="npr. 2500,00" onchange="D.stanovi.find(x=>x.id=='${s.id}').pd=num(this.value);save();render()">`+dbtn('s',s.id)}
+ `<h2>Uplate</h2>`+(us.map(u=>`<div class="card row"><div>${u.datum.split('-').reverse().join('.')}.</div><div class="ok">${fmt(u.iznos)}</div></div>`).join('')||'<p class="mu">Nema uplata.</p>')+`<label for="kv">Kvadratura (m²)</label><input id="kv" inputmode="decimal" value="${s.kv||''}" onchange="setKv('${s.id}',this.value)">`+`<label for="sf">Šifra u pozivu na broj</label><input id="sf" value="${esc(s.sif||'')}" placeholder="npr. PPJ8A/1" onchange="D.stanovi.find(x=>x.id=='${s.id}').sif=this.value.trim();save()"><label for="tl">Telefon stanara</label><input id="tl" type="tel" inputmode="tel" value="${esc(s.tel||'')}" placeholder="npr. 064 123 4567" onchange="D.stanovi.find(x=>x.id=='${s.id}').tel=this.value.trim();save()"><label for="pd">Prethodni dug (din)</label><input id="pd" inputmode="decimal" value="${s.pd?String(s.pd).replace('.',','):''}" placeholder="npr. 2500,00" onchange="D.stanovi.find(x=>x.id=='${s.id}').pd=num(this.value);save();render()"><label for="pz">Poziv na broj za uplatu (cifre)</label><input id="pz" inputmode="numeric" value="${esc(s.poz||'')}" placeholder="${esc(String(s.broj).replace(/\D/g,''))}" onchange="D.stanovi.find(x=>x.id=='${s.id}').poz=this.value.trim();save()">`+dbtn('s',s.id)}
 function setKv(id,v){D.stanovi.find(x=>x.id==id).kv=dec(v);save();render()}
 
 function zad(){app.innerHTML=back('home')+`<h1>Zaduženja</h1>`+
@@ -115,7 +116,7 @@ function bk(){app.innerHTML=back('home')+`<h1>Rezervna kopija</h1><p class="mu">
  <textarea id="t" aria-label="Podaci">${esc(JSON.stringify(D))}</textarea><div class="err" id="e"></div>
  <button class="b" onclick="cp()">📋 Kopiraj podatke</button><button class="b ghost" onclick="ld()">Učitaj podatke iz teksta</button>`}
 function cp(){const t=$('#t');t.select();try{document.execCommand('copy');err('Kopirano.')}catch(e){err('Označite tekst i kopirajte ga ručno.')}}
-function ld(){try{const x=JSON.parse($('#t').value);if(!x.stanovi||!x.zad||!x.upl)throw 0;D=x;D.sast=D.sast||[];D.rac=D.rac||[];D.kvar=D.kvar||[];D.ziro=D.ziro||'';save();go('home')}catch(e){err('Tekst nije ispravan. Zalepite celu kopiju.')}}
+function ld(){try{const x=JSON.parse($('#t').value);if(!x.stanovi||!x.zad||!x.upl)throw 0;D=x;D.sast=D.sast||[];D.rac=D.rac||[];D.kvar=D.kvar||[];D.ziro=D.ziro||'';D.firme=D.firme||[];save();go('home')}catch(e){err('Tekst nije ispravan. Zalepite celu kopiju.')}}
 
 const dt=d=>d?d.split('-').reverse().join('.')+'.':'';
 const tally=t=>{const c={za:0,protiv:0};D.stanovi.forEach(s=>{const v=t.g[s.id];if(v)c[v]++});c.nije=D.stanovi.length-c.za-c.protiv;return c};
@@ -137,7 +138,7 @@ function glas(){const [mi,ti]=V.id.split('|'),m=D.sast.find(x=>x.id==mi),t=m&&m.
  (D.stanovi.map(s=>{const v=t.g[s.id]||'';return `<div class="card"><b>Stan ${esc(s.broj)}</b> <span class="mu">${esc(s.ime)}</span><div class="two3">`+[['za','ZA'],['protiv','PROTIV']].map(([k,l])=>`<button class="v ${v==k?'on '+k:''}" onclick="vote('${mi}','${ti}','${s.id}','${k}')">${l}</button>`).join('')+`</div></div>`}).join('')||'<p class="mu">Prvo dodajte stanove.</p>')}
 function vote(mi,ti,si,k){const t=D.sast.find(x=>x.id==mi).t.find(x=>x.id==ti);if(t.g[si]==k)delete t.g[si];else t.g[si]=k;save();const y=scrollY;render();scrollTo(0,y)}
 const rx=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-const nadji=poz=>D.stanovi.filter(s=>s.sif&&new RegExp('(^|[^A-Za-z0-9])'+rx(s.sif)+'(?![A-Za-z0-9])','i').test(poz)).sort((a,b)=>b.sif.length-a.sif.length)[0];
+const nadji=poz=>D.stanovi.filter(s=>s.sif&&new RegExp('(^|[^A-Za-z0-9])'+rx(s.sif)+'(?![A-Za-z0-9])','i').test(poz)).sort((a,b)=>b.sif.length-a.sif.length)[0]||D.stanovi.find(s=>{const r=pozRef(s);return r&&String(poz).replace(/^00-?/,'').replace(/\s/g,'')==r});
 function parseIz(t){const x=new DOMParser().parseFromString(t,'text/xml');if(x.querySelector('parsererror'))return null;
  const g=(e,n)=>((e.getElementsByTagName(n)[0]||{}).textContent||'').trim();
  return [...x.getElementsByTagName('Prom')].map(p=>({ref:g(p,'BrojNaloga'),poz:g(p,'Poziv'),opis:g(p,'Opis1'),ime:g(p,'NazivNal'),pot:parseFloat(g(p,'IznosPot'))||0,dat:g(p,'DatumKnjizenja')})).filter(r=>r.pot>0)}
@@ -156,8 +157,8 @@ function potvrdi(){let k=0;IM.forEach(r=>{if(r.dup||!r.stan)return;D.upl.push({i
  const l=IM.filter(r=>!r.dup).length;if(l){render();err(`Uneto: ${k}. Nije izabran stan za: ${l}.`)}else go('upl')}
 const za=()=>D.rac.filter(x=>!x.placeno),kasni=x=>x.rok&&x.rok<today();
 function rac(){const z=za().sort((a,b)=>(a.rok||'9').localeCompare(b.rok||'9')),p=D.rac.filter(x=>x.placeno).sort((a,b)=>b.placeno.localeCompare(a.placeno)),uk=z.reduce((a,x)=>a+x.iznos,0);
- app.innerHTML=back('home')+`<h1>Računi zgrade</h1><div class="card"><div class="mu">Za plaćanje (${z.length})</div><div class="big ${z.length?'bad':'ok'}">${fmt(uk)}</div></div><button class="b" onclick="go('racNew')">＋ Stigao je novi račun</button><h2>Treba platiti</h2>`+
- (z.map(x=>`<div class="card"><div class="row"><div><b>${esc(x.dob)}</b><div class="mu ${kasni(x)?'bad':''}">${x.rok?'Rok: '+dt(x.rok)+(kasni(x)?' — KASNI':''):'Bez roka'}</div>${x.nap?`<div class="mu">${esc(x.nap)}</div>`:''}</div><div>${fmt(x.iznos)}</div></div><button class="b" onclick="platio('${x.id}')">✔ Plaćeno</button>${dbtn('r',x.id)}</div>`).join('')||'<p class="mu">Nema neplaćenih računa.</p>')+
+ app.innerHTML=back('home')+`<h1>Računi zgrade</h1><div class="card"><div class="mu">Za plaćanje (${z.length})</div><div class="big ${z.length?'bad':'ok'}">${fmt(uk)}</div></div><button class="b" onclick="go('racNew')">＋ Stigao je novi račun</button><button class="b ghost" onclick="go('nalog')">📄 Nalog za prenos</button><button class="b ghost" onclick="go('firme')">🏢 Firme (žiro računi)</button><h2>Treba platiti</h2>`+
+ (z.map(x=>`<div class="card"><div class="row"><div><b>${esc(x.dob)}</b><div class="mu ${kasni(x)?'bad':''}">${x.rok?'Rok: '+dt(x.rok)+(kasni(x)?' — KASNI':''):'Bez roka'}</div>${x.nap?`<div class="mu">${esc(x.nap)}</div>`:''}</div><div>${fmt(x.iznos)}</div></div><button class="b" onclick="platio('${x.id}')">✔ Plaćeno</button><button class="b ghost" onclick="go('nalog','${x.id}')">📄 Nalog za prenos</button>${dbtn('r',x.id)}</div>`).join('')||'<p class="mu">Nema neplaćenih računa.</p>')+
  `<h2>Plaćeno</h2>`+(p.map(x=>`<div class="card"><div class="row"><div><b>${esc(x.dob)}</b><div class="mu">Plaćeno ${dt(x.placeno)}</div></div><div class="ok">${fmt(x.iznos)}</div></div>${dbtn('r',x.id)}</div>`).join('')||'<p class="mu">Još ništa nije plaćeno.</p>')}
 function racNew(){app.innerHTML=back('rac')+`<h1>Novi račun zgrade</h1><label for="o">Od koga je račun</label><input id="o" placeholder="npr. EPS, vodovod, čišćenje"><label for="i">Iznos (din)</label><input id="i" inputmode="decimal"><label for="r">Rok za plaćanje</label><input id="r" type="date"><label for="n">Napomena (nije obavezno)</label><input id="n"><div class="err" id="e"></div><button class="b" onclick="addRac()">Sačuvaj</button>`}
 function addRac(){const o=$('#o').value.trim(),i=num($('#i').value),r=$('#r').value,n=$('#n').value.trim();if(!o||i<=0)return err('Upišite od koga je račun i iznos.');
@@ -187,14 +188,42 @@ function resen(id){D.kvar.find(x=>x.id==id).res=today();save();render()}
 function zapisnik(){const m=D.sast.find(x=>x.id==V.id);if(!m)return go('sast');const n=D.stanovi.length;
  const tx=['ZAPISNIK SA SASTANKA STANARA',D.zgrada||'',`Datum: ${dt(m.datum)} u ${m.vreme||''}, ${m.mesto||''}`,'','Dnevni red i odluke:',...m.t.flatMap((t,i)=>{const c=tally(t);return [`${i+1}. ${t.tekst}`,`   ZA: ${c.za}, PROTIV: ${c.protiv}, nije glasalo: ${c.nije} (od ${n} stanova)`,`   Odluka: ${c.za>n/2?'USVOJENO':'NIJE USVOJENO'}`]}),'','Upravnik: ______________'].join('\n');ZT=tx;
  app.innerHTML=bkTo('sastV',m.id)+`<div class="pg"><pre style="white-space:pre-wrap;font:inherit">${esc(tx)}</pre></div><p class="mu noprint">Odluka se računa po većini svih stanova. Proverite kolika je većina potrebna za ovu vrstu odluke.</p><div class="err" id="e"></div><button class="b" onclick="print()">🖨 Štampaj zapisnik</button><button class="b ghost" onclick="cpt(ZT)">📋 Kopiraj tekst</button>`}
+if(typeof qrcode!=='undefined')qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];
+const pozRef=s=>(s.poz||String(s.broj).replace(/\D/g,'')).replace(/[^0-9-]/g,'').slice(0,23);
+const ziroN=z=>{const p=String(z||'').split('-').map(x=>x.trim());let b,m,c;
+ if(p.length==3&&p.every(x=>/^\d+$/.test(x))){[b,m,c]=p}else{const d=String(z||'').replace(/\D/g,'');if(d.length!=18)return null;b=d.slice(0,3);m=d.slice(3,16);c=d.slice(16)}
+ if(b.length!=3||m.length>13||c.length!=2)return null;m=m.padStart(13,'0');
+ let ok=false;try{ok=98n-(BigInt(b+m+'00')%97n)==BigInt(c)}catch(e){}
+ return {r:b+m+c,ok}};
+const ips=s=>{const z=ziroN(D.ziro),d=Math.max(0,dug(s));if(!z)return null;
+ const cl=(t,n)=>String(t).replace(/[^A-Za-z0-9ŠĐČĆŽšđčćž .,\-()\/&']/g,'').trim().slice(0,n),nm=cl(D.primalac||D.zgrada||'',70),ref=pozRef(s),sf=/^\d{3}$/.test(D.sf||'289')?(D.sf||'289'):'289';
+ if(!nm)return null;
+ return ['K:PR','V:01','C:1','R:'+z.r,'N:'+nm,'I:RSD'+d.toFixed(2).replace('.',','),'SF:'+sf,'S:'+cl('Uplata po računu - stan '+s.broj,35),...(ref?['RO:00'+ref]:[])].join('|')};
+const qrHtml=s=>{if(typeof qrcode==='undefined')return '';const t=ips(s);if(!t)return '';try{const q=qrcode(0,'M');q.addData(t,'Byte');q.make();const z=ziroN(D.ziro);
+ return `<div style="display:flex;gap:12px;align-items:center;margin-top:12px"><div style="background:#fff;padding:6px;border-radius:8px;line-height:0;width:156px;flex:0 0 156px">${q.createSvgTag({cellSize:3,margin:0,scalable:true})}</div><div class="mu">${dug(s)>0.005?'Skenirajte QR kod u aplikaciji vaše banke za uplatu.':'Za dodatnu uplatu unapred skenirajte QR kod i upišite iznos sami.'}${z.ok?'':'<br><b class="bad">Proverite žiro račun: kontrolni broj nije ispravan.</b>'}</div></div>`}catch(e){return ''}};
+const ipsClean=(t,n)=>String(t).replace(/[^A-Za-z0-9ŠĐČĆŽšđčćž .,\-()\/&']/g,'').trim().slice(0,n);
+const ipsBuild=o=>{const z=ziroN(o.ziro),nm=ipsClean(o.naziv||'',70);if(!z||!nm)return null;const poz=String(o.poz||'').trim(),pc=poz.replace(/[^0-9-]/g,''),mod=/^\d{2}$/.test(o.model||'')?o.model:'',ro=mod&&pc?(mod+pc).slice(0,25):'';
+ return {bad:pc!==poz,t:['K:PR','V:01','C:1','R:'+z.r,'N:'+nm,'I:RSD'+(o.iznos||0).toFixed(2).replace('.',','),'SF:'+(/^\d{3}$/.test(o.sf)?o.sf:'221'),'S:'+ipsClean(o.svrha||'Uplata po racunu',35),...(ro?['RO:'+ro]:[])].join('|')}};
+let NL={f:'',br:'',model:'97',poz:'',iznos:'',sf:'221'};
+function firme(){app.innerHTML=back('rac')+`<h1>Firme</h1><p class="mu">Firme kojima zgrada plaća račune (struja, voda, čišćenje...).</p>`+(D.firme.map(f=>`<div class="card"><b>${esc(f.naziv)}</b><div class="mu">${esc(f.ziro)}</div>${dbtn('f',f.id)}</div>`).join('')||'<p class="mu">Još nema firmi.</p>')+`<h2>Nova firma</h2><label for="fn">Naziv firme</label><input id="fn"><label for="fz">Žiro račun firme</label><input id="fz" inputmode="numeric" placeholder="npr. 160-1234567890123-45"><div class="err" id="e"></div><button class="b" onclick="addFirma()">＋ Dodaj firmu</button>`}
+function addFirma(){const n=$('#fn').value.trim(),z=$('#fz').value.trim(),g=ziroN(z);if(!n)return err('Upišite naziv firme.');if(!g)return err('Žiro račun nije u ispravnom obliku, npr. 160-1234567890123-45.');if(!g.ok)return err('Kontrolni broj žiro računa nije ispravan. Proverite broj.');D.firme.push({id:uid(),naziv:n,ziro:z});save();go('firme')}
+function nalogPrikaz(){const f=D.firme.find(x=>x.id==NL.f),i=num(NL.iznos),pl=D.primalac||D.zgrada||'',svrha=NL.br?'Uplata po računu br. '+NL.br:'Uplata po računu',ref=((NL.model||'')+' '+(NL.poz||'')).trim();
+ const g=f&&i>0&&typeof qrcode!=='undefined'?ipsBuild({ziro:f.ziro,naziv:f.naziv,iznos:i,sf:NL.sf,svrha,model:NL.model,poz:NL.poz}):null;let qr='';
+ if(g){try{const q=qrcode(0,'M');q.addData(g.t,'Byte');q.make();qr=`<div style="display:flex;gap:12px;align-items:center;margin-top:12px"><div style="background:#fff;padding:6px;border-radius:8px;line-height:0;width:140px;flex:0 0 140px">${q.createSvgTag({cellSize:3,margin:0,scalable:true})}</div><div class="mu">QR kod za plaćanje u mobilnom bankarstvu.${g.bad?'<br><b class="bad">Poziv na broj ima slova, pa ga QR kod ne nosi.</b>':''}</div></div>`}catch(e){}}
+ $('#np').innerHTML=`<div class="pg"><h2>Nalog za prenos</h2><table class="nl"><tr><td colspan="3"><span class="mu">Platilac</span><br>${esc(pl)}<br>${esc(D.ziro||'')}</td></tr><tr><td colspan="3"><span class="mu">Svrha uplate</span><br>${esc(svrha)}</td></tr><tr><td colspan="3"><span class="mu">Primalac</span><br>${f?esc(f.naziv):'—'}<br>${f?esc(f.ziro):''}</td></tr><tr><td><span class="mu">Šifra plaćanja</span><br>${esc(NL.sf)}</td><td><span class="mu">Valuta</span><br>RSD</td><td><span class="mu">Iznos</span><br><b>${i>0?fmt(i):'—'}</b></td></tr><tr><td colspan="2"><span class="mu">Model i poziv na broj</span><br>${esc(ref)||'—'}</td><td><span class="mu">Datum</span><br>${dt(today())}</td></tr></table>${qr}</div>`}
+function nalog(){if(V.id&&NL.rid!=V.id){const r=D.rac.find(x=>x.id==V.id);if(r){const f=D.firme.find(x=>x.naziv.toLowerCase()==r.dob.toLowerCase());NL={rid:r.id,f:f?f.id:'',br:'',model:'97',poz:'',iznos:String(r.iznos).replace('.',','),sf:'221'}}}
+ const u=(k)=>`onchange="NL.${k}=this.value;nalogPrikaz()"`;
+ app.innerHTML=back('rac')+`<div class="noprint"><h1>Nalog za prenos</h1>${D.ziro?'':'<p class="bad"><b>Upišite žiro račun stambene zajednice na početnom ekranu.</b></p>'}<label for="nf">Firma</label><select id="nf" ${u('f')}><option value="">— izaberite firmu —</option>${D.firme.map(f=>`<option value="${f.id}" ${f.id==NL.f?'selected':''}>${esc(f.naziv)}</option>`).join('')}</select><button class="b ghost" onclick="go('firme')">＋ Nova firma</button>
+ <label for="nb">Broj računa</label><input id="nb" value="${esc(NL.br)}" ${u('br')}><div class="two"><div style="flex:0 0 28%"><label for="nm">Model</label><input id="nm" inputmode="numeric" value="${esc(NL.model)}" ${u('model')}></div><div style="flex:1"><label for="np2">Poziv na broj</label><input id="np2" value="${esc(NL.poz)}" ${u('poz')}></div></div>
+ <label for="ni">Iznos (din)</label><input id="ni" inputmode="decimal" value="${esc(NL.iznos)}" ${u('iznos')}><label for="ns">Šifra plaćanja</label><input id="ns" inputmode="numeric" value="${esc(NL.sf)}" ${u('sf')}></div><div id="np"></div><button class="b" onclick="print()">🖨 Štampaj nalog</button>`;nalogPrikaz()}
 const mes=m=>{const [g,mm]=m.split('-');return mm+'.'+g+'.'};
 const rast=s=>{const zs=D.zad.filter(z=>z.st.includes(s.id)),ms=zs.map(z=>z.mesec||'').sort().pop()||'',tek=ms?zs.filter(z=>z.mesec==ms):[],tk=tek.reduce((a,z)=>a+zi(z,s),0),d=dug(s);return {tek,tk,ms,pre:d-tk,d}};
 const usl=s=>D.upl.filter(u=>u.stan==s.id).sort((a,b)=>a.datum.localeCompare(b.datum));
 const blok=s=>{const {tek,tk,ms,pre,d}=rast(s),us=usl(s),zn=ms?' za '+mes(ms):'';return `<div class="pg"><p class="mu">${esc(D.zgrada||'')}</p><h1>Račun — stan ${esc(s.broj)}</h1><p class="mu">${esc(s.ime)} — ${s.kv||0} m²</p>
- <div class="card"><div class="row"><div>${pre<-0.005?'Preplata iz ranije':'Prethodni dug'}</div><div>${fmt(pre)}</div></div><div class="row"><div>Zaduženje${zn}</div><div>${fmt(tk)}</div></div><hr><div class="mu">UKUPNO ZA UPLATU</div><div class="big ${d>0.005?'bad':'ok'}">${d>0.005?fmt(d):'0,00 din'}</div>${s.sif?`<div class="mu">Poziv na broj: ${esc(s.sif)}</div>`:''}${D.ziro?`<div class="mu">Žiro račun: ${esc(D.ziro)}</div>`:''}</div>${dug(s)>PRAG?`<div class="card" style="border-color:var(--bad)"><b class="bad">OPOMENA PRED UTUŽENJE</b><p>${opomTxt(s)}</p></div>`:''}
+ <div class="card"><div class="row"><div>${pre<-0.005?'Pretplata iz ranije':'Prethodni dug'}</div><div>${fmt(pre)}</div></div><div class="row"><div>Zaduženje${zn}</div><div>${fmt(tk)}</div></div><hr><div class="mu">${d<-0.005?'PRETPLATA':'UKUPNO ZA UPLATU'}</div><div class="big ${d>0.005?'bad':'ok'}">${d>0.005?fmt(d):d<-0.005?fmt(-d):'0,00 din'}</div>${s.sif?`<div class="mu">Poziv na broj: ${esc(s.sif)}</div>`:''}${D.ziro?`<div class="mu">Žiro račun: ${esc(D.ziro)}</div>`:''}${qrHtml(s)}</div>${dug(s)>PRAG?`<div class="card" style="border-color:var(--bad)"><b class="bad">OPOMENA PRED UTUŽENJE</b><p>${opomTxt(s)}</p></div>`:''}
  <h2>Zaduženje${zn}</h2>`+(tek.map(z=>`<div class="card row"><div>${esc(z.opis)}</div><div>${fmt(zi(z,s))}</div></div>`).join('')||'<p class="mu">Nema zaduženja.</p>')+
  `<h2>Istorija uplata</h2>`+(us.map(u=>`<div class="card row"><div>${dt(u.datum)}</div><div class="ok">${fmt(u.iznos)}</div></div>`).join('')||'<p class="mu">Nema uplata.</p>')+`</div>`};
-const poruka=s=>{const {tek,tk,ms,pre,d}=rast(s),us=usl(s),zn=ms?' za '+mes(ms):'';return [D.zgrada||'',`Stan ${s.broj} — ${s.ime}`,'',`${pre<-0.005?'Preplata iz ranije':'Prethodni dug'}: ${fmt(pre)}`,`Zaduženje${zn}: ${fmt(tk)}`,d>0.005?`UKUPNO ZA UPLATU: ${fmt(d)}`:d<-0.005?`Preplata: ${fmt(-d)}`:'Nema dugovanja. Hvala!',...(s.sif?[`Poziv na broj: ${s.sif}`]:[]),...(D.ziro?[`Žiro račun: ${D.ziro}`]:[]),...(d>PRAG?['',opomTxt(s)]:[]),'','Zaduženje:',...(tek.length?tek.map(z=>`- ${z.opis}: ${fmt(zi(z,s))}`):['- nema']),'','Uplate:',...(us.length?us.map(u=>`- ${dt(u.datum)} ${fmt(u.iznos)}`):['- nema uplata'])].join('\n')};
+const poruka=s=>{const {tek,tk,ms,pre,d}=rast(s),us=usl(s),zn=ms?' za '+mes(ms):'';return [D.zgrada||'',`Stan ${s.broj} — ${s.ime}`,'',`${pre<-0.005?'Pretplata iz ranije':'Prethodni dug'}: ${fmt(pre)}`,`Zaduženje${zn}: ${fmt(tk)}`,d>0.005?`UKUPNO ZA UPLATU: ${fmt(d)}`:d<-0.005?`Pretplata: ${fmt(-d)}`:'Nema dugovanja. Hvala!',...(s.sif?[`Poziv na broj: ${s.sif}`]:[]),...(D.ziro?[`Žiro račun: ${D.ziro}`]:[]),...(d>PRAG?['',opomTxt(s)]:[]),'','Zaduženje:',...(tek.length?tek.map(z=>`- ${z.opis}: ${fmt(zi(z,s))}`):['- nema']),'','Uplate:',...(us.length?us.map(u=>`- ${dt(u.datum)} ${fmt(u.iznos)}`):['- nema uplata'])].join('\n')};
 const tel=t=>{let d=String(t||'').replace(/\D/g,'');if(!d)return'';if(d.startsWith('00'))d=d.slice(2);else if(d.startsWith('0'))d='381'+d.slice(1);return d};
 const slanje=s=>{const n=tel(s.tel),e=encodeURIComponent(poruka(s));
  return `<h2 class="noprint">Slanje stanaru</h2>`+(n?`<p class="mu noprint">Telefon: <b>${esc(s.tel)}</b></p><a class="b" href="https://wa.me/${n}?text=${e}" target="_blank" rel="noopener">💬 WhatsApp</a>`:`<p class="mu noprint">Telefon nije upisan. Upišite ga na stranici stana.</p>`)+`<button class="b ghost" onclick="shr()">📤 Pošalji preko Viber / SMS</button><button class="b ghost" onclick="cp()">📋 Kopiraj poruku</button><p class="mu noprint">Ako Viber ili SMS ne izađu, kopirajte poruku i nalepite je u razgovor sa stanarom.</p>`};
@@ -202,17 +231,17 @@ function racun(){const s=D.stanovi.find(x=>x.id==V.id);if(!s)return go('stanari'
  app.innerHTML=bkTo('stan',s.id)+blok(s)+`${opomUI(s)}<button class="b" onclick="print()">🖨 Štampaj račun</button><div class="noprint"><h2>Poruka za stanara</h2><p class="mu">Pošaljite samo ovom stanaru (Viber, SMS).</p><textarea id="t" aria-label="Poruka" style="font-size:17px;min-height:240px">${esc(poruka(s))}</textarea><div class="err" id="e"></div></div>${slanje(s)}`}
 function shr(){const t=$('#t').value;if(navigator.share)navigator.share({text:t}).catch(e=>{if(e.name!='AbortError')cp()});else cp()}
 function stampa(){app.innerHTML=back('stanari')+`<div class="noprint"><h1>Štampa računa</h1><p class="mu">Svaki stan na posebnoj strani. Ako tipka ne reaguje, koristite Štampaj iz menija pretraživača.</p></div><button class="b" onclick="print()">🖨 Štampaj sve račune</button>`+D.stanovi.map(blok).join('')}
-function render(){if(BLOK&&V.p!='bk')return istekla();({izv,duz,skup,kvar,kvarNew,zapisnik,rac,racNew,stampa,racun,home,stanari,stanNew,stan,zad,zadNew,upl,uplNew,bk,sast,sastNew,sastV,poziv,glas,uvoz,uvoz2})[V.p]()}
+function render(){if(BLOK&&V.p!='bk')return istekla();({nalog,firme,izv,duz,skup,kvar,kvarNew,zapisnik,rac,racNew,stampa,racun,home,stanari,stanNew,stan,zad,zadNew,upl,uplNew,bk,sast,sastNew,sastV,poziv,glas,uvoz,uvoz2})[V.p]()}
 
 /* ===== PROVERA ŠIFRE (licenca) ===== */
 const LIC_URL='';  // OVDE UPISATI ADRESU APPS SCRIPT PROGRAMA (ako je prazno, šifra se ne traži)
 let LIC=null,BLOK=false;try{LIC=JSON.parse(localStorage.getItem('uz_lic'))}catch(e){}
-const proveri=async s=>(await fetch(LIC_URL+'?sifra='+encodeURIComponent(s))).json();
+const proveri=async s=>(await fetch(LIC_URL+'?sifra='+encodeURIComponent(s)+'&stanova='+D.stanovi.length+'&zgrada='+encodeURIComponent(D.zgrada||''))).json();
 const saveLic=()=>{try{localStorage.setItem('uz_lic',JSON.stringify(LIC))}catch(e){}};
 function sifraEkran(){app.innerHTML=`<h1>Upravnik zgrade</h1><p class="mu">Unesite šifru koju ste dobili.</p><label for="sf2">Šifra</label><input id="sf2" autocomplete="off"><div class="err" id="e"></div><button class="b" onclick="prijava()">Uđi</button>`}
 async function prijava(){const s=$('#sf2').value.trim();if(!s)return;err('Proveravam...');
  try{const j=await proveri(s);if(j.ok){LIC={sifra:s,t:Date.now()};saveLic();BLOK=false;go('home')}else err(j.poruka||'Šifra nije ispravna.')}catch(e){err('Nema veze sa internetom. Pokušajte ponovo.')}}
-function istekla(){app.innerHTML=`<h1>Pretplata nije aktivna</h1><p>Aplikacija je zaključana. Vaši podaci su sačuvani i nisu obrisani. Možete da napravite rezervnu kopiju.</p><button class="b" onclick="go('bk')">💾 Rezervna kopija</button><button class="b ghost" onclick="LIC=null;try{localStorage.removeItem('uz_lic')}catch(e){};BLOK=false;sifraEkran()">Unesite novu šifru</button>`}
+function istekla(){app.innerHTML=`<h1>Pretplata nije aktivna</h1><p>Aplikacija je zaključana. Vaši podaci su sačuvani i nisu obrisani. Možete da napravite rezervnu kopiju.</p><button class="b" onclick="go('bk')">💾 Rezervna kopija</button><button class="b ghost" onclick="BLOK=false;pocetak()">Proveri ponovo</button><button class="b ghost" onclick="LIC=null;try{localStorage.removeItem('uz_lic')}catch(e){};BLOK=false;sifraEkran()">Unesite novu šifru</button>`}
 function pocetak(){
  if(!LIC_URL){render();return}
  if(!LIC){sifraEkran();return}
@@ -220,5 +249,6 @@ function pocetak(){
  proveri(LIC.sifra).then(j=>{if(j.ok){LIC.t=Date.now();saveLic();if(!nedavno)render()}else{BLOK=true;istekla()}})
  .catch(()=>{if(nedavno)return;BLOK=true;istekla()})}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&LIC_URL&&LIC&&!BLOK)proveri(LIC.sifra).then(j=>{if(j.ok){LIC.t=Date.now();saveLic()}else{BLOK=true;istekla()}}).catch(()=>{})});
 pocetak();
 </script></body></html>
