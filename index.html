@@ -2,6 +2,7 @@
 <html lang="sr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Upravnik zgrade</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0f5c4d"><link rel="apple-touch-icon" href="icon-512.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <style>
 :root{--bg:#f2f4f1;--card:#fff;--tx:#1d2a27;--mu:#5b6b66;--pr:#0f5c4d;--prx:#fff;--bad:#b3261e;--ok:#17703f;--bd:#d5dcd8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101715;--card:#18221f;--tx:#eaf1ee;--mu:#9bada7;--pr:#4fc3a8;--prx:#06251e;--bad:#ff8a80;--ok:#5fd68e;--bd:#2a3833}}
@@ -201,6 +202,23 @@ function racun(){const s=D.stanovi.find(x=>x.id==V.id);if(!s)return go('stanari'
  app.innerHTML=bkTo('stan',s.id)+blok(s)+`${opomUI(s)}<button class="b" onclick="print()">🖨 Štampaj račun</button><div class="noprint"><h2>Poruka za stanara</h2><p class="mu">Pošaljite samo ovom stanaru (Viber, SMS).</p><textarea id="t" aria-label="Poruka" style="font-size:17px;min-height:240px">${esc(poruka(s))}</textarea><div class="err" id="e"></div></div>${slanje(s)}`}
 function shr(){const t=$('#t').value;if(navigator.share)navigator.share({text:t}).catch(e=>{if(e.name!='AbortError')cp()});else cp()}
 function stampa(){app.innerHTML=back('stanari')+`<div class="noprint"><h1>Štampa računa</h1><p class="mu">Svaki stan na posebnoj strani. Ako tipka ne reaguje, koristite Štampaj iz menija pretraživača.</p></div><button class="b" onclick="print()">🖨 Štampaj sve račune</button>`+D.stanovi.map(blok).join('')}
-function render(){({izv,duz,skup,kvar,kvarNew,zapisnik,rac,racNew,stampa,racun,home,stanari,stanNew,stan,zad,zadNew,upl,uplNew,bk,sast,sastNew,sastV,poziv,glas,uvoz,uvoz2})[V.p]()}
-render();
+function render(){if(BLOK&&V.p!='bk')return istekla();({izv,duz,skup,kvar,kvarNew,zapisnik,rac,racNew,stampa,racun,home,stanari,stanNew,stan,zad,zadNew,upl,uplNew,bk,sast,sastNew,sastV,poziv,glas,uvoz,uvoz2})[V.p]()}
+
+/* ===== PROVERA ŠIFRE (licenca) ===== */
+const LIC_URL='';  // OVDE UPISATI ADRESU APPS SCRIPT PROGRAMA (ako je prazno, šifra se ne traži)
+let LIC=null,BLOK=false;try{LIC=JSON.parse(localStorage.getItem('uz_lic'))}catch(e){}
+const proveri=async s=>(await fetch(LIC_URL+'?sifra='+encodeURIComponent(s))).json();
+const saveLic=()=>{try{localStorage.setItem('uz_lic',JSON.stringify(LIC))}catch(e){}};
+function sifraEkran(){app.innerHTML=`<h1>Upravnik zgrade</h1><p class="mu">Unesite šifru koju ste dobili.</p><label for="sf2">Šifra</label><input id="sf2" autocomplete="off"><div class="err" id="e"></div><button class="b" onclick="prijava()">Uđi</button>`}
+async function prijava(){const s=$('#sf2').value.trim();if(!s)return;err('Proveravam...');
+ try{const j=await proveri(s);if(j.ok){LIC={sifra:s,t:Date.now()};saveLic();BLOK=false;go('home')}else err(j.poruka||'Šifra nije ispravna.')}catch(e){err('Nema veze sa internetom. Pokušajte ponovo.')}}
+function istekla(){app.innerHTML=`<h1>Pretplata nije aktivna</h1><p>Aplikacija je zaključana. Vaši podaci su sačuvani i nisu obrisani. Možete da napravite rezervnu kopiju.</p><button class="b" onclick="go('bk')">💾 Rezervna kopija</button><button class="b ghost" onclick="LIC=null;try{localStorage.removeItem('uz_lic')}catch(e){};BLOK=false;sifraEkran()">Unesite novu šifru</button>`}
+function pocetak(){
+ if(!LIC_URL){render();return}
+ if(!LIC){sifraEkran();return}
+ const nedavno=Date.now()-LIC.t<7*864e5;if(nedavno)render();
+ proveri(LIC.sifra).then(j=>{if(j.ok){LIC.t=Date.now();saveLic();if(!nedavno)render()}else{BLOK=true;istekla()}})
+ .catch(()=>{if(nedavno)return;BLOK=true;istekla()})}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+pocetak();
 </script></body></html>
