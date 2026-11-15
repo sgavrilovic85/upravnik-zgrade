@@ -234,7 +234,7 @@ function stampa(){app.innerHTML=back('stanari')+`<div class="noprint"><h1>Štamp
 function render(){if(BLOK&&V.p!='bk')return istekla();({nalog,firme,izv,duz,skup,kvar,kvarNew,zapisnik,rac,racNew,stampa,racun,home,stanari,stanNew,stan,zad,zadNew,upl,uplNew,bk,sast,sastNew,sastV,poziv,glas,uvoz,uvoz2})[V.p]()}
 
 /* ===== PROVERA ŠIFRE (licenca) ===== */
-const LIC_URL='';  // OVDE UPISATI ADRESU APPS SCRIPT PROGRAMA (ako je prazno, šifra se ne traži)
+const LIC_URL='https://script.google.com/macros/s/AKfycby3dI1QT0RwiA3S3LXbPyMvc2udUq45GvsKLMcvHv4nmKz9ikUj8L3XjXlMInPzoHWP/exec';  // OVDE UPISATI ADRESU APPS SCRIPT PROGRAMA (ako je prazno, šifra se ne traži)
 let LIC=null,BLOK=false;try{LIC=JSON.parse(localStorage.getItem('uz_lic'))}catch(e){}
 const proveri=async s=>(await fetch(LIC_URL+'?sifra='+encodeURIComponent(s)+'&stanova='+D.stanovi.length+'&zgrada='+encodeURIComponent(D.zgrada||''))).json();
 const saveLic=()=>{try{localStorage.setItem('uz_lic',JSON.stringify(LIC))}catch(e){}};
