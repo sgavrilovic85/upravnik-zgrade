@@ -34,8 +34,9 @@ textarea{min-height:140px;font-size:14px}
 <script>
 let D;try{D=JSON.parse(localStorage.getItem('uz'))}catch(e){}
 D=D||{zgrada:'',stanovi:[],zad:[],upl:[]};D.sast=D.sast||[];D.rac=D.rac||[];D.kvar=D.kvar||[];D.ziro=D.ziro||'';D.firme=D.firme||[];
+if(!D.izm&&(D.stanovi.length||D.zad.length||D.upl.length))D.izm=Date.now();
 let V={p:'home'},armed='',IM=[];
-const save=()=>{try{localStorage.setItem('uz',JSON.stringify(D))}catch(e){}};
+const save=()=>{D.izm=Date.now();try{localStorage.setItem('uz',JSON.stringify(D))}catch(e){}if(typeof planiraj==='function')planiraj()};
 const $=s=>document.querySelector(s),app=$('#app');
 const fmt=n=>n.toLocaleString('sr-RS',{minimumFractionDigits:2,maximumFractionDigits:2})+' din';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
@@ -73,7 +74,7 @@ function home(){const LOGO='<div style="background:#fff;border-radius:16px;paddi
  <button class="b" onclick="go('kvar')">🔧 Kvarovi i zahtevi</button>
  <button class="b" onclick="go('izv')">📊 Izveštaji</button>
  <button class="b" onclick="go('uvoz')">📥 Uvoz izvoda iz banke</button>
- <button class="b ghost" onclick="go('bk')">💾 Rezervna kopija</button>
+ <button class="b ghost" onclick="go('bk')">💾 Rezervna kopija</button>${syncTxt()}
  <label for="zg">Naziv zgrade</label><input id="zg" value="${esc(D.zgrada)}" placeholder="npr. Ulica 22. septembar 46" onchange="D.zgrada=this.value.trim();save();render()"><label for="zr">Žiro račun stambene zajednice</label><input id="zr" value="${esc(D.ziro||'')}" placeholder="npr. 160-0000000000000-00" onchange="D.ziro=this.value.trim();save();render()"><label for="pr">Naziv primaoca uplate</label><input id="pr" value="${esc(D.primalac||'')}" placeholder="npr. Stambena zajednica Dunavska 17" onchange="D.primalac=this.value.trim();save()"><label for="sfk">Šifra plaćanja za QR kod</label><input id="sfk" inputmode="numeric" value="${esc(D.sf||'289')}" onchange="D.sf=this.value.trim();save()">`}
 
 function stanari(){app.innerHTML=back('home')+`<h1>Stanari</h1>`+
@@ -216,9 +217,32 @@ function nalog(){if(V.id&&NL.rid!=V.id){const r=D.rac.find(x=>x.id==V.id);if(r){
  app.innerHTML=back('rac')+`<div class="noprint"><h1>Nalog za prenos</h1>${D.ziro?'':'<p class="bad"><b>Upišite žiro račun stambene zajednice na početnom ekranu.</b></p>'}<label for="nf">Firma</label><select id="nf" ${u('f')}><option value="">— izaberite firmu —</option>${D.firme.map(f=>`<option value="${f.id}" ${f.id==NL.f?'selected':''}>${esc(f.naziv)}</option>`).join('')}</select><button class="b ghost" onclick="go('firme')">＋ Nova firma</button>
  <label for="nb">Broj računa</label><input id="nb" value="${esc(NL.br)}" ${u('br')}><div class="two"><div style="flex:0 0 28%"><label for="nm">Model</label><input id="nm" inputmode="numeric" value="${esc(NL.model)}" ${u('model')}></div><div style="flex:1"><label for="np2">Poziv na broj</label><input id="np2" value="${esc(NL.poz)}" ${u('poz')}></div></div>
  <label for="ni">Iznos (din)</label><input id="ni" inputmode="decimal" value="${esc(NL.iznos)}" ${u('iznos')}><label for="ns">Šifra plaćanja</label><input id="ns" inputmode="numeric" value="${esc(NL.sf)}" ${u('sf')}></div><div id="np"></div><button class="b" onclick="print()">🖨 Štampaj nalog</button>`;nalogPrikaz()}
-const kopijaUI=()=>`<h2>Kopija na serveru</h2><p class="mu">Možete da sačuvate kopiju svih podataka kod davaoca aplikacije, da se mogu vratiti ako se nešto obriše ili zaglavi. Šalju se podaci o zgradi, stanarima (imena, telefoni, dugovi) i uplatama.</p><label style="display:flex;gap:10px;align-items:flex-start;font-weight:400"><input type="checkbox" id="sg" style="width:28px;min-height:28px;flex:0 0 28px"> Saglasan sam da se ovi podaci pošalju davaocu aplikacije.</label><button class="b" onclick="kopijaUp()">☁ Sačuvaj kopiju na serveru</button><button class="b ghost" onclick="kopijaDown()">${armed=='vrati'?'Pritisnite opet: zamenjuje sve podatke':'⬇ Vrati kopiju sa servera'}</button>`;
-async function kopijaUp(){if(!$('#sg').checked)return err('Potvrdite saglasnost kvačicom.');err('Šaljem...');try{const j=await (await fetch(LIC_URL,{method:'POST',body:JSON.stringify({sifra:LIC.sifra,podaci:D})})).json();err(j.ok?'Kopija je sačuvana.':(j.poruka||'Nije uspelo.'))}catch(e){err('Nije uspelo. Proverite internet.')}}
-async function kopijaDown(){if(armed!='vrati'){armed='vrati';return bk()}armed='';err('Preuzimam...');try{const j=await (await fetch(LIC_URL+'?akcija=vrati&sifra='+encodeURIComponent(LIC.sifra))).json();if(!j.ok||!j.podaci)return err(j.poruka||'Nema sačuvane kopije.');D=j.podaci;D.sast=D.sast||[];D.rac=D.rac||[];D.kvar=D.kvar||[];D.firme=D.firme||[];D.ziro=D.ziro||'';save();go('home')}catch(e){err('Nije uspelo. Proverite internet.')}}
+let PT=null,KONF=false,KS=0;
+const prazno=()=>!D.stanovi.length&&!D.zad.length&&!D.upl.length&&!D.sast.length&&!D.rac.length&&!D.kvar.length&&!D.firme.length;
+const syncTxt=()=>LIC_URL&&LIC&&LIC.sg?`<p class="mu">☁ Rezervna kopija: ${LIC.up?new Date(LIC.up).toLocaleString('sr-RS'):'još nije sačuvana'}</p>`:'';
+function planiraj(){clearTimeout(PT);if(!LIC_URL||!LIC||!LIC.sg||BLOK||KONF)return;PT=setTimeout(()=>gore(),15000)}
+async function gore(force){if(!LIC_URL||!LIC||!LIC.sg||BLOK||(KONF&&!force))return false;const izm=D.izm||Date.now();
+ try{const j=await (await fetch(LIC_URL,{method:'POST',body:JSON.stringify({sifra:LIC.sifra,podaci:D,osnova:LIC.osn||0,force:!!force})})).json();
+  if(j.ok){LIC.osn=izm;LIC.up=Date.now();saveLic();KONF=false;return true}
+  if(j.konflikt){KONF=true;KS=j.serverIzm||0;konfliktEkran();return false}}catch(e){}return false}
+async function dole(){try{const j=await (await fetch(LIC_URL+'?akcija=vrati&sifra='+encodeURIComponent(LIC.sifra))).json();return j.ok&&j.podaci?j.podaci:null}catch(e){return null}}
+function setD(p){D=p;D.sast=D.sast||[];D.rac=D.rac||[];D.kvar=D.kvar||[];D.firme=D.firme||[];D.ziro=D.ziro||'';try{localStorage.setItem('uz',JSON.stringify(D))}catch(e){}LIC.osn=D.izm||0;LIC.up=Date.now();saveLic()}
+async function sinhro(){if(!LIC_URL||!LIC||!LIC.sg||BLOK||KONF)return;const p=await dole();
+ if(!p){if(!prazno())gore();return}
+ const S=p.izm||0,osn=LIC.osn||0;
+ if(prazno()||(S>osn&&(D.izm||0)<=osn)){setD(p);render();return}
+ if(S>osn){KONF=true;KS=S;konfliktEkran();return}
+ if((D.izm||0)>osn)gore()}
+function konfliktEkran(){const a=k=>armed==k?'Pritisnite opet za potvrdu':'';
+ app.innerHTML=`<h1>Podaci se razlikuju</h1><p>Na serveru postoji novija kopija sa drugog uređaja${KS?' (izmenjena '+new Date(KS).toLocaleString('sr-RS')+')':''}, a ima izmena i na ovom uređaju. Izaberite koje podatke zadržavate.</p>
+ <button class="b" onclick="izaberi('server')">${a('server')||'⬇ Uzmi podatke sa servera'}</button><p class="mu">Izmene sa ovog uređaja se gube.</p>
+ <button class="b ghost" onclick="izaberi('ovaj')">${a('ovaj')||'⬆ Zadrži podatke sa ovog uređaja'}</button><p class="mu">Kopija na serveru se prepisuje, a prethodna ostaje sačuvana kod davaoca aplikacije.</p><div class="err" id="e"></div>`}
+async function izaberi(k){if(armed!=k){armed=k;return konfliktEkran()}armed='';
+ if(k=='server'){const p=await dole();if(!p)return err('Nije uspelo. Proverite internet.');setD(p);KONF=false;render()}
+ else{const ok=await gore(true);if(ok){KONF=false;render()}else err('Nije uspelo. Proverite internet.')}}
+const kopijaUI=()=>`<h2>Kopija na serveru</h2><p class="mu">${LIC.sg?'Automatsko čuvanje je uključeno: podaci se sami šalju davaocu aplikacije kao rezerva i pojave se na drugom uređaju sa istom šifrom.':'Uključite automatsko čuvanje kopije svih podataka kod davaoca aplikacije, da se mogu vratiti ako se nešto obriše.'}</p>${syncTxt()}<button class="b" onclick="kopijaUp()">☁ Sačuvaj kopiju sada</button><button class="b ghost" onclick="kopijaDown()">${armed=='vrati'?'Pritisnite opet: zamenjuje podatke na ovom uređaju':'⬇ Vrati kopiju sa servera'}</button>`;
+async function kopijaUp(){err('Šaljem...');const ok=await gore();if(ok)bk();else if(!KONF)err('Nije uspelo. Proverite internet.')}
+async function kopijaDown(){if(armed!='vrati'){armed='vrati';return bk()}armed='';err('Preuzimam...');const p=await dole();if(!p)return err('Nema sačuvane kopije ili nema interneta.');setD(p);go('home')}
 function slikaRacuna(s){const {tek,tk,ms,pre,d}=rast(s),us=usl(s).slice(-6),zn=ms?' za '+mes(ms):'',W=820,P=40,F='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',INK='#1d2a27',MU='#5b6b66',BAD='#b3261e',OK='#17703f',BD='#d5dcd8';
  const c=document.createElement('canvas');c.width=W;c.height=2800;const x=c.getContext('2d');let y=P+20;x.fillStyle='#fff';x.fillRect(0,0,W,2800);
  const T=(t,sz,col,b,al)=>{x.font=`${b?'700 ':''}${sz}px ${F}`;x.fillStyle=col;x.textAlign=al||'left';x.fillText(String(t),al=='right'?W-P:P,y)};
@@ -262,19 +286,20 @@ function render(){if(BLOK&&V.p!='bk')return istekla();({nalog,firme,izv,duz,skup
 /* ===== PROVERA ŠIFRE (licenca) ===== */
 const LIC_URL='https://script.google.com/macros/s/AKfycby3dI1QT0RwiA3S3LXbPyMvc2udUq45GvsKLMcvHv4nmKz9ikUj8L3XjXlMInPzoHWP/exec';  // OVDE UPISATI ADRESU APPS SCRIPT PROGRAMA (ako je prazno, šifra se ne traži)
 let LIC=null,BLOK=false;try{LIC=JSON.parse(localStorage.getItem('uz_lic'))}catch(e){}
+if(LIC&&!LIC.sg){LIC.sg=true;try{localStorage.setItem('uz_lic',JSON.stringify(LIC))}catch(e){}}
 const proveri=async s=>(await fetch(LIC_URL+'?sifra='+encodeURIComponent(s)+'&stanova='+D.stanovi.length+'&zgrada='+encodeURIComponent(D.zgrada||''))).json();
 const saveLic=()=>{try{localStorage.setItem('uz_lic',JSON.stringify(LIC))}catch(e){}};
 function sifraEkran(){app.innerHTML=`<h1>Upravnik zgrade</h1><p class="mu">Unesite šifru koju ste dobili.</p><label for="sf2">Šifra</label><input id="sf2" autocomplete="off"><div class="err" id="e"></div><button class="b" onclick="prijava()">Uđi</button>`}
 async function prijava(){const s=$('#sf2').value.trim();if(!s)return;err('Proveravam...');
- try{const j=await proveri(s);if(j.ok){LIC={sifra:s,t:Date.now()};saveLic();BLOK=false;go('home')}else err(j.poruka||'Šifra nije ispravna.')}catch(e){err('Nema veze sa internetom. Pokušajte ponovo.')}}
+ try{const j=await proveri(s);if(j.ok){LIC={sifra:s,t:Date.now(),sg:true};saveLic();BLOK=false;go('home');sinhro()}else err(j.poruka||'Šifra nije ispravna.')}catch(e){err('Nema veze sa internetom. Pokušajte ponovo.')}}
 function istekla(){app.innerHTML=`<h1>Pretplata nije aktivna</h1><p>Aplikacija je zaključana. Vaši podaci su sačuvani i nisu obrisani. Možete da napravite rezervnu kopiju.</p><button class="b" onclick="go('bk')">💾 Rezervna kopija</button><button class="b ghost" onclick="BLOK=false;pocetak()">Proveri ponovo</button><button class="b ghost" onclick="LIC=null;try{localStorage.removeItem('uz_lic')}catch(e){};BLOK=false;sifraEkran()">Unesite novu šifru</button>`}
 function pocetak(){
  if(!LIC_URL){render();return}
  if(!LIC){sifraEkran();return}
  const nedavno=Date.now()-LIC.t<7*864e5;if(nedavno)render();
- proveri(LIC.sifra).then(j=>{if(j.ok){LIC.t=Date.now();saveLic();if(!nedavno)render()}else{BLOK=true;istekla()}})
+ proveri(LIC.sifra).then(j=>{if(j.ok){LIC.t=Date.now();saveLic();if(!nedavno)render();sinhro()}else{BLOK=true;istekla()}})
  .catch(()=>{if(nedavno)return;BLOK=true;istekla()})}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&LIC_URL&&LIC&&!BLOK)proveri(LIC.sifra).then(j=>{if(j.ok){LIC.t=Date.now();saveLic()}else{BLOK=true;istekla()}}).catch(()=>{})});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&LIC_URL&&LIC&&LIC.sg&&(D.izm||0)>(LIC.osn||0))gore();if(!document.hidden&&LIC_URL&&LIC&&!BLOK)proveri(LIC.sifra).then(j=>{if(j.ok){LIC.t=Date.now();saveLic();sinhro()}else{BLOK=true;istekla()}}).catch(()=>{})});
 pocetak();
 </script></body></html>
