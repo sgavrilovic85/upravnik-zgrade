@@ -234,9 +234,13 @@ async function sinhro(){if(!LIC_URL||!LIC||!LIC.sg||BLOK||KONF)return;const p=aw
  if(S>osn){KONF=true;KS=S;konfliktEkran();return}
  if((D.izm||0)>osn)gore()}
 function konfliktEkran(){const a=k=>armed==k?'Pritisnite opet za potvrdu':'';
- app.innerHTML=`<h1>Podaci se razlikuju</h1><p>Na serveru postoji novija kopija sa drugog uređaja${KS?' (izmenjena '+new Date(KS).toLocaleString('sr-RS')+')':''}, a ima izmena i na ovom uređaju. Izaberite koje podatke zadržavate.</p>
+ const sm=p=>`${esc(p.zgrada||'(bez naziva)')}: ${p.stanovi.length} stanova, ${p.zad.length} zaduženja, ${p.upl.length} uplata${p.izm?', izmenjeno '+new Date(p.izm).toLocaleString('sr-RS'):''}`;
+ app.innerHTML=`<h1>Podaci se razlikuju</h1><p>Podaci na ovom uređaju i na serveru nisu isti. Izaberite koje zadržavate.</p>
+ <div class="card"><b>Ovaj uređaj</b><div class="mu">${sm(D)}</div></div><div class="card"><b>Server</b><div class="mu" id="srv">Učitavam...</div></div>
  <button class="b" onclick="izaberi('server')">${a('server')||'⬇ Uzmi podatke sa servera'}</button><p class="mu">Izmene sa ovog uređaja se gube.</p>
- <button class="b ghost" onclick="izaberi('ovaj')">${a('ovaj')||'⬆ Zadrži podatke sa ovog uređaja'}</button><p class="mu">Kopija na serveru se prepisuje, a prethodna ostaje sačuvana kod davaoca aplikacije.</p><div class="err" id="e"></div>`}
+ <button class="b ghost" onclick="izaberi('ovaj')">${a('ovaj')||'⬆ Zadrži podatke sa ovog uređaja'}</button><p class="mu">Kopija na serveru se prepisuje, a prethodna ostaje sačuvana kod davaoca aplikacije.</p>
+ <button class="b ghost" onclick="$('#tk').style.display='block';$('#t').select()">💾 Prvo sačuvaj tekst kopije ovog uređaja</button><div id="tk" style="display:none"><textarea id="t" aria-label="Podaci">${esc(JSON.stringify(D))}</textarea><button class="b" onclick="cp()">📋 Kopiraj podatke</button></div><div class="err" id="e"></div>`;
+ dole().then(p=>{const e=$('#srv');if(e)e.innerHTML=p?sm(p):'Nije moguće učitati.'})}
 async function izaberi(k){if(armed!=k){armed=k;return konfliktEkran()}armed='';
  if(k=='server'){const p=await dole();if(!p)return err('Nije uspelo. Proverite internet.');setD(p);KONF=false;render()}
  else{const ok=await gore(true);if(ok){KONF=false;render()}else err('Nije uspelo. Proverite internet.')}}
